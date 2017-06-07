@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -10,6 +11,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -29,11 +31,12 @@ public class PageScrapperFrame extends JFrame{
 	private JButton scrape;
 	private JTextField scrape_txt;
 	private PageScrapper ps;
-	private JLabel status,scraping;
+	private JLabel status,scraping,img_label;
 	private ArrayList<String> list;
 	private JTable table;
 	private DefaultTableModel model;
 	private static final String NO_RESULTS = "No results!";
+	private JFrame img_frame;
 	
 	
 	public PageScrapperFrame(){
@@ -69,6 +72,7 @@ public class PageScrapperFrame extends JFrame{
 		};
 		
 		table = new JTable(model);
+		table.setToolTipText("Double Click to Scrape/Display Image");
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		table.getColumnModel().getColumn(1).setMaxWidth(50);
 		
@@ -103,8 +107,11 @@ public class PageScrapperFrame extends JFrame{
 		        JTable table =(JTable)me.getSource();
 		        int r = table.rowAtPoint(me.getPoint());
 		        if (r >=0 && me.getClickCount() > 1) {
-		        	String s = (String)table.getModel().getValueAt(r, 0);
-		        	if (!s.equals(NO_RESULTS)) scrape(s);
+		        	String url = (String)table.getModel().getValueAt(r, 0);
+		        	String type = (String)table.getModel().getValueAt(r, 1);
+		        	if (url.equals(NO_RESULTS)) return;
+		        	if (type.equals("LINK")) scrape(url);
+		        	else if (type.equals("IMAGE")) showImage(url);
 		        }
 		    }
 		});
@@ -136,6 +143,17 @@ public class PageScrapperFrame extends JFrame{
 			if (p.PairGetType() == PageScrapper.DATA_TYPE.A) type = "LINK";
 			model.addRow(new Object[]{p.PairGetValue(), type});
 		}
+	}
+	
+	private void showImage(String url){
+		img_frame = new JFrame();
+		Image im = ps.PageGetImage(url);
+		if (im != null) img_frame.add(new JScrollPane(new JLabel(new ImageIcon(im))));
+			else img_frame.add(new JScrollPane(new JLabel("Could not get this image")));
+		img_frame.setMinimumSize(new Dimension(1000, 600));
+		img_frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		img_frame.pack();
+		img_frame.setVisible(true);
 	}
 	
 	public static void main(String[] args) {

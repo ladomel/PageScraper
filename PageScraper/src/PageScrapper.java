@@ -1,3 +1,4 @@
+import java.awt.Image;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -7,6 +8,9 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 
 public class PageScrapper{
 	
@@ -57,20 +61,21 @@ public class PageScrapper{
 			url = new URL(URLstring);
 			URLConnection con = url.openConnection();
 			con.setConnectTimeout(2000);
+			con.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36");
 			con.connect();
 			
 			bf = new BufferedReader(new InputStreamReader(con.getInputStream()));
-			
+		
 			String temp;
 			while ((temp = bf.readLine()) != null){
 				page = page.concat(temp.trim());
 			}
-			
 			bf.close();
 		} catch (MalformedURLException mf){
 			error = new String("Invalid URL!");
 			return null;
 		} catch (IOException ioe){
+			ioe.printStackTrace();
 			error = new String("Connection Failed!");
 			return null;
 		}
@@ -81,6 +86,23 @@ public class PageScrapper{
 	public String PageGetError(){
 		return error;
 	}
+	
+	public Image PageGetImage(String Url){
+		Image image = null;
+		try {
+			URL url = new URL(Url);
+			URLConnection con = url.openConnection();
+			con.setConnectTimeout(5000);
+			con.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36");			
+			con.connect();
+
+			image = ImageIO.read(con.getInputStream());
+		} catch (Exception e){
+			//e.printStackTrace();
+		}
+	
+		return image;
+	} 
 	
 	private ArrayList<Pair> parseList(String page,String URString){
 		parseTags(page);
@@ -115,20 +137,31 @@ public class PageScrapper{
 	// deals with relative links
 	private String checkLink(String link,String URString){
 		if (link.startsWith("../")){
-			URString = URString.substring(0,URString.lastIndexOf('/'));
+			int k = URString.lastIndexOf('/');
+			if (k == -1) URString = ""; else URString = URString.substring(0,k);
 			while (link.startsWith("../")){
 				if (link.length() <= 3) break;
 				link = link.substring(3);
-				URString = URString.substring(0,URString.lastIndexOf('/'));
+				k = URString.lastIndexOf('/');
+				if (k == -1) URString = ""; else URString = URString.substring(0,k);
 			}
-			return URString + "/" + link;
+			return validateLink(URString + "/" + link);
 		}
-		if (link.startsWith("http")) return link;
-		if (link.startsWith("//")) return "https:" + link;
-		if (link.charAt(0) == '/' || link.charAt(0) == '?') return URString + link;
+		if (link.startsWith("http")) return validateLink(link);
+		if (link.startsWith("//")) return validateLink("https:" + link);
+		if (link.charAt(0) == '/' || link.charAt(0) == '?') return validateLink(URString + link);
 		if (link.startsWith("#") || link.startsWith("javascript")) return null; 
-		return URString.substring(0,URString.lastIndexOf('/')) + "/" + link;
+		return validateLink(URString.substring(0,URString.lastIndexOf('/')) + "/" + link);
 	}
+	
+	private String validateLink(String link){
+		try {
+			new URL(link);
+		} catch (MalformedURLException e) {
+			return null;
+		}
+		return link;
+	}	
 	
 	private void parseTags(String page){
 		boolean parOpen = false;
