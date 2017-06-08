@@ -10,11 +10,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 
 public class PageScrapper{
 	
-	public enum DATA_TYPE{IMG,A};
+	public enum DATA_TYPE{IMAGE,LINK};
 	
 	public class Pair{
 		private String s;
@@ -116,7 +115,7 @@ public class PageScrapper{
 				
 				if (link != null) {
 					String newS = checkLink(link,URString);
-					Pair p = new Pair(newS, DATA_TYPE.A);
+					Pair p = new Pair(newS, DATA_TYPE.LINK);
 					if (newS != null && !storage.contains(p)) storage.add(p);
 				}
 			} else if(s.substring(0, 5).equals("<img ")){
@@ -125,7 +124,7 @@ public class PageScrapper{
 
 				if (link != null) {
 					String newS = checkLink(link,URString);
-					Pair p = new Pair(newS, DATA_TYPE.IMG);
+					Pair p = new Pair(newS, DATA_TYPE.IMAGE);
 					if (newS != null && !storage.contains(p)) storage.add(p);
 				}
 			}

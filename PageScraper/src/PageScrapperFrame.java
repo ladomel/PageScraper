@@ -1,6 +1,4 @@
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Image;
@@ -13,30 +11,33 @@ import java.util.ArrayList;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableModel;
 
 public class PageScrapperFrame extends JFrame{
+	private static final long serialVersionUID = 1L;
 	
-	private JButton scrape;
+	
+	private JButton scrape, savebutton;
 	private JTextField scrape_txt;
 	private PageScrapper ps;
-	private JLabel status,scraping,img_label;
-	private ArrayList<String> list;
+	private JLabel status,scraping;
 	private JTable table;
 	private DefaultTableModel model;
 	private static final String NO_RESULTS = "No results!";
 	private JFrame img_frame;
+	private PSFile psfile;
+	private JFileChooser filechooser;
+	private ArrayList<PageScrapper.Pair> links;
+	private boolean permitScraping;
+	private String last_scraped;
 	
 	
 	public PageScrapperFrame(){
@@ -50,10 +51,16 @@ public class PageScrapperFrame extends JFrame{
 		setVisible(true);
 		
 		ps = new PageScrapper();
+		psfile = new PSFile();
+		links = null;
+		permitScraping = true;
+		last_scraped = "";
 	}
 
 	private void initGUI(){
+		filechooser = new JFileChooser();
 		status = new JLabel("Status: ");
+		savebutton = new JButton("Save Results");
 		scraping = new JLabel("Results for: ");
 		scrape = new JButton("Scrape");
 		scrape.setPreferredSize(new Dimension(80, 25));
@@ -86,6 +93,7 @@ public class PageScrapperFrame extends JFrame{
 		JPanel botP = new JPanel(new BorderLayout());
 		botP.add(status, BorderLayout.LINE_START);
 		botP.setMaximumSize(new Dimension(100000000, 50));
+		botP.add(savebutton, BorderLayout.LINE_END);
 		
 		JPanel fullP = new JPanel();
 		fullP.setLayout(new BoxLayout(fullP, BoxLayout.Y_AXIS));
@@ -99,7 +107,8 @@ public class PageScrapperFrame extends JFrame{
 	private void addListeners(){
 		scrape.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				scrape(scrape_txt.getText());
+				last_scraped = scrape_txt.getText();
+				scrape(last_scraped);
 			}
 		});
 		table.addMouseListener(new MouseAdapter(){
@@ -115,15 +124,35 @@ public class PageScrapperFrame extends JFrame{
 		        }
 		    }
 		});
+		savebutton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				permitScraping = false;
+				scrape.setEnabled(false);
+				status.setText("Status: Saving...");
+				
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						filechooser.showSaveDialog(PageScrapperFrame.this);
+						psfile.PSFileSave(links,filechooser.getSelectedFile(),last_scraped);
+						status.setText("Status: " + psfile.PSFileGetError());
+						scrape.setEnabled(true);
+					}
+				});
+				permitScraping = true;
+			}
+		});
 	}
 	
 	private void scrape(String s){
+		if (!permitScraping) return;
 		scrape.setEnabled(false);
 		status.setText("Status: Scraping...");
 		
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				fillTable(ps.PageDownload(s));
+				links = ps.PageDownload(s);
+				fillTable();
 				status.setText("Status: " + ps.PageGetError());
 				scrape_txt.setText("");
 				scrape.setEnabled(true);
@@ -132,17 +161,18 @@ public class PageScrapperFrame extends JFrame{
 		});
 	}
 
-	private void fillTable(ArrayList<PageScrapper.Pair> a){
+	private void fillTable(){
 		model.setRowCount(0);
-		if (a == null) {
+		if (links == null) {
 			model.addRow(new Object[]{NO_RESULTS});
 			return;
 		}
-		for (PageScrapper.Pair p : a){
+		for (PageScrapper.Pair p : links){
 			String type = "IMAGE";
-			if (p.PairGetType() == PageScrapper.DATA_TYPE.A) type = "LINK";
+			if (p.PairGetType() == PageScrapper.DATA_TYPE.LINK) type = "LINK";
 			model.addRow(new Object[]{p.PairGetValue(), type});
 		}
+		
 	}
 	
 	private void showImage(String url){
