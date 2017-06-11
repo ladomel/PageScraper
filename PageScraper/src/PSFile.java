@@ -13,6 +13,11 @@ public class PSFile {
 	
 	public boolean PSFileSave(ArrayList<PageScrapper.Pair> links, File file, String search){
 		PrintWriter pw;
+		if (file == null){
+			error = "No File Chosen!";
+			return false;
+		}
+		
 		try {
 			pw = new PrintWriter(file);
 			
