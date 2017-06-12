@@ -59,7 +59,6 @@ public class PSDB {
 			pst.setString(1, query);
 			pst.executeUpdate();
 			int id = getIndex(con,query);
-			System.out.println(id);
 			for (PageScrapper.Pair res : results){
 				pst = con.prepareStatement(
 						"INSERT INTO " + RESULTS_TABLE + " ( query_id , link , type ) VALUES ( ? , ? , ? );");
@@ -108,7 +107,7 @@ public class PSDB {
 			rs.next();
 			return rs.getInt(1);
 		} catch (SQLException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			return -1;
 		}
 	}
@@ -131,7 +130,6 @@ public class PSDB {
 			closeConnection(con);
 		} catch (Exception e){
 			closeConnection(con);
-			System.out.println("asd");
 			return null;
 		}
 		
@@ -155,7 +153,6 @@ public class PSDB {
 			closeConnection(con);
 		} catch (Exception e){
 			closeConnection(con);
-			System.out.println("asdasd");
 			return null;
 		}
 		

@@ -56,6 +56,8 @@ public class PageScrapper{
 		storage.clear();
 		links.clear();
 		
+		URLstring = checkLink(URLstring,"https://");
+		
 		try {
 			url = new URL(URLstring);
 			URLConnection con = url.openConnection();
@@ -74,7 +76,7 @@ public class PageScrapper{
 			error = new String("Invalid URL!");
 			return null;
 		} catch (IOException ioe){
-			ioe.printStackTrace();
+			//ioe.printStackTrace();
 			error = new String("Connection Failed!");
 			return null;
 		}
